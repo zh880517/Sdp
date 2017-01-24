@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace SdpCSharp
+namespace Sdp
 {
     [StructLayout(LayoutKind.Explicit)]
     public struct UnionIntDouble
