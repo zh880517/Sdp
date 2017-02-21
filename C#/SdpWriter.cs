@@ -182,7 +182,7 @@ namespace Sdp
 
         public void Visit(uint tag, string name, bool require, ref string val)
         {
-            if (require || string.IsNullOrEmpty(val))
+            if (require || !string.IsNullOrEmpty(val))
             {
                 PackHead(tag, SdpPackDataType.SdpPackDataType_String);
                 byte[] vByte = Encoding.Default.GetBytes(val);
@@ -198,6 +198,15 @@ namespace Sdp
                 ulong iSeconds = (ulong)(val - Sdp.EpochOrigin).TotalSeconds;
                 PackHead(tag, SdpPackDataType.SdpPackDataType_Integer_Positive);
                 PackNum64(iSeconds);
+            }
+        }
+        
+        public void Visit(uint tag, string name, bool require, ref Guid val)
+        {
+            if (require || val != Guid.Empty)
+            {
+                string str = val.ToString();
+                Visit(tag, name, require, ref str);
             }
         }
 
@@ -263,5 +272,6 @@ namespace Sdp
                 }
             }
         }
+
     }
 }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Sdp
 {
@@ -47,6 +49,7 @@ namespace Sdp
         void Visit(uint tag, string name, bool require, ref double val);
         void Visit(uint tag, string name, bool require, ref string val);
         void Visit(uint tag, string name, bool require, ref DateTime val);
+        void Visit(uint tag, string name, bool require, ref Guid val);
         void Visit(uint tag, string name, bool require, ref byte[] val);
         void Visit(uint tag, string name, bool require, ref IMessage val);
         void Visit<T>(uint tag, string name, bool require, ref List<T> val);
@@ -90,6 +93,8 @@ namespace Sdp
 
         private static BytesSerializer _Bytes = new BytesSerializer();
 
+        private static GuidSerializer _Guid = new GuidSerializer();
+
         private static MessageSerializer _Message = new MessageSerializer();
 
         private static Type _MessageType = typeof(IMessage);
@@ -104,6 +109,7 @@ namespace Sdp
             { typeof(float), _Flaot },
             { typeof(double), _Double },
             { typeof(string), _String },
+            { typeof(Guid), _Guid },
             { typeof(DateTime),  _DateTime},
             { typeof(byte[]), _Bytes },
         };
@@ -115,11 +121,79 @@ namespace Sdp
             {
                 return _SerializerMap[type];
             }
-            if (type.BaseType == _MessageType)
+            foreach(var it in type.GetInterfaces())
             {
-                return _Message;
+                if (it == _MessageType)
+                {
+                    return _Message;
+                }
             }
             throw new Exception("Sdp Wrong type");
+        }
+
+        public static T DeepClone<T>( this T obj)
+        {
+            object retval;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                BinaryFormatter bf = new BinaryFormatter();
+                bf.Serialize(ms, obj);
+                ms.Seek(0, SeekOrigin.Begin);
+                retval = bf.Deserialize(ms);
+                ms.Close();
+            }
+            return (T)retval;
+        }
+
+        public static byte[] Serializer<T>(T val)
+        {
+            SdpWriter writer = new SdpWriter();
+            var ser = GetSerializer<T>();
+            if (ser != null)
+            {
+                ser.Write(val, writer, 0, true);
+            }
+            return writer.ToBytes();
+        }
+
+        public static byte[] Serializer<T>(List<T> val)
+        {
+            SdpWriter writer = new SdpWriter();
+            writer.Visit(0, null, true, ref val);
+            return writer.ToBytes();
+        }
+
+        public static byte[] Serializer<TKey, TValue>(Dictionary<TKey, TValue> val)
+        {
+            SdpWriter writer = new SdpWriter();
+            writer.Visit(0, null, true, ref val);
+            return writer.ToBytes();
+        }
+        
+        public static bool Deserialize<T>(this T val, byte[] data)
+        {
+            SdpReader reader = new SdpReader(data, 0, 0);
+            var ser = GetSerializer<T>();
+            if (ser != null)
+            {
+                val = (T)ser.Read(reader, 0, true, val);
+                return true;
+            }
+            return false;
+        }
+
+        public static bool Deserialize<T>(this List<T> val, byte[] data)
+        {
+            SdpReader reader = new SdpReader(data, 0, 0);
+            reader.Visit(0, null, false, ref val);
+            return true;
+        }
+
+        public static bool Deserialize<TKey, TValue>(this Dictionary<TKey, TValue> val, byte[] data)
+        {
+            SdpReader reader = new SdpReader(data, 0, 0);
+            reader.Visit(0, null, false, ref val);
+            return true;
         }
     }
 }

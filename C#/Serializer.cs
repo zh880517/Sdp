@@ -162,6 +162,23 @@ namespace Sdp
         }
     }
 
+    public class GuidSerializer : ISerializer
+    {
+        public static string Empty = Guid.Empty.ToString();
+        public object Read(SdpReader reader, uint tag, bool require, object value = null)
+        {
+            string val = Empty;
+            reader.Visit(tag, null, require, ref val);
+            return Guid.Parse(val);
+        }
+
+        public void Write(object value, SdpWriter writer, uint tag, bool require)
+        {
+            string str = ((Guid)value).ToString();
+            writer.Visit(tag, null, require, ref str);
+        }
+    }
+
     public class MessageSerializer : ISerializer
     {
         public object Read(SdpReader reader, uint tag, bool require, object value)
@@ -181,4 +198,5 @@ namespace Sdp
         }
 
     }
+    
 }

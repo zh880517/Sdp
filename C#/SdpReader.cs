@@ -16,8 +16,7 @@ namespace Sdp
         {
             _Stream = stream;
             _CurPos = iCurPos;
-            bool flag = iSize == 0u;
-            if (flag)
+            if (iSize == 0)
             {
                 _Size = (uint)_Stream.Length;
             }
@@ -365,6 +364,13 @@ namespace Sdp
             }
         }
 
+        public void Visit(uint tag, string name, bool require, ref Guid val)
+        {
+            string str = GuidSerializer.Empty;
+            Visit(tag, name, require, ref val);
+            val = Guid.Parse(str);
+        }
+
         public void Visit(uint tag, string name, bool require, ref DateTime val)
         {
             if (SkipToTag(tag))
@@ -416,6 +422,8 @@ namespace Sdp
                 if (type == SdpPackDataType.SdpPackDataType_Vector)
                 {
                     uint iSize = Unpack32();
+                    if (val == null)
+                        val = new List<T>((int)iSize);
                     ISerializer ser = Sdp.GetSerializer<T>();
                     for (uint i=0; i<iSize; ++i)
                     {
@@ -435,6 +443,8 @@ namespace Sdp
                 if (type == SdpPackDataType.SdpPackDataType_Map)
                 {
                     uint iSize = Unpack32();
+                    if (val == null)
+                        val = new Dictionary<TKey, TValue>((int)iSize);
                     ISerializer keySer = Sdp.GetSerializer<TKey>();
                     ISerializer valSer = Sdp.GetSerializer<TValue>();
                     for (var i=0; i<iSize; ++i)
