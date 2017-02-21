@@ -86,5 +86,15 @@ namespace Parser
             path2Depth = path2Depth.Substring(1);
             return path1Depth + path2Depth;
         }
+
+        public static string TranPath(string path)
+        {
+            string outPath = Path.GetFullPath(path).Replace(Path.DirectorySeparatorChar, '/');
+            if (outPath[outPath.Length - 1] != Path.DirectorySeparatorChar)
+            {
+                outPath = outPath + "/";
+            }
+            return outPath;
+        }
     }
 }

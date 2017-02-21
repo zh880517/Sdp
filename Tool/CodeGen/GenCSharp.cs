@@ -98,8 +98,8 @@ namespace CodeGen
                     if (i < entity.Fields.Count - 1)
                         sb.Append(", ");
                 }
+                sb.Append(" }");
                 sb.NewLine();
-                sb.Append('}');
             }
 
             foreach (var field in entity.Fields)

@@ -30,6 +30,8 @@ namespace Parser
 
         private static List<ICodeGen> CreadCSharpGen(string srcDir, string outDir)
         {
+            srcDir = FileHelper.TranPath(srcDir);
+            outDir = FileHelper.TranPath(outDir);
             List<ICodeGen> list = new List<ICodeGen>();
             foreach (var file in ProtoPackage.Files)
             {
@@ -52,7 +54,18 @@ namespace Parser
                 if (file == strOut)
                     return;
             }
-            File.WriteAllText(strOutFile, strOut, Encoding.UTF8);
+            string dir = Path.GetDirectoryName(strOutFile);
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            using (FileStream fs = new FileStream(strOutFile, FileMode.Create))
+            {
+                byte[] data = new UTF8Encoding().GetBytes(strOut);
+                fs.Write(data, 0, data.Length);
+                fs.Flush();
+                fs.Close();
+            }
         }
 
     }
