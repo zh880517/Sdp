@@ -12,7 +12,37 @@ namespace Parser
     public static class Builder
     {
 
-        public static void Gen(ConsoleCmdLine cmd)
+        /*
+         * cmd example : -src "E:/proto" -csharp "E:/GenCSharp"
+         * call bool bResult = Builder.DoBuilder(args);
+         */
+        public static bool DoBuilder(string[] args)
+        {
+            try
+            {
+                ConsoleCmdLine c = new ConsoleCmdLine();
+                CmdLineString srcDir = new CmdLineString("src", true, "源文件目录");
+                CmdLineString csharpDir = new CmdLineString("csharp", false, "生成C#文件的目录");
+                CmdLineString cppDir = new CmdLineString("cpp", false, "生成C++文件的目录");
+                c.RegisterParameter(srcDir);
+                c.RegisterParameter(csharpDir);
+                c.RegisterParameter(cppDir);
+                c.Parse(args);
+                bool bResult = ProtoPackage.Parse(srcDir.Value);
+                if (bResult)
+                {
+                    Gen(c);
+                }
+                return bResult;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        private static void Gen(ConsoleCmdLine cmd)
         {
             List<ICodeGen> list = new List<ICodeGen>();
             if (cmd["csharp"].Exists)
