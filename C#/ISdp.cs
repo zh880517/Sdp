@@ -51,14 +51,19 @@ namespace Sdp
         void Visit(uint tag, string name, bool require, ref DateTime val);
         void Visit(uint tag, string name, bool require, ref Guid val);
         void Visit(uint tag, string name, bool require, ref byte[] val);
-        void Visit(uint tag, string name, bool require, ref IMessage val);
+        void Visit(uint tag, string name, bool require, ref IStruct val);
         void Visit<T>(uint tag, string name, bool require, ref List<T> val);
         void Visit<TKey, TValue>(uint tag, string name, bool require, ref Dictionary<TKey, TValue> val);
     }
 
-    public interface IMessage
+    public interface IStruct
     {
         void Visit(ISdp sdp);
+    }
+
+    public interface IMessage
+    {
+        int MsgID();
     }
 
     public interface ISerializer
@@ -97,7 +102,7 @@ namespace Sdp
 
         private static MessageSerializer _Message = new MessageSerializer();
 
-        private static Type _MessageType = typeof(IMessage);
+        private static Type _MessageType = typeof(IStruct);
 
         private static Dictionary<Type, ISerializer> _SerializerMap = new Dictionary<Type, ISerializer>()
         {

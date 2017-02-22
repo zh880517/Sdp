@@ -220,7 +220,7 @@ namespace Sdp
             }
         }
 
-        public void Visit(uint tag, string name, bool require, ref IMessage val)
+        public void Visit(uint tag, string name, bool require, ref IStruct val)
         {
             if (require)
             {

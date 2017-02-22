@@ -183,7 +183,7 @@ namespace Sdp
     {
         public object Read(SdpReader reader, uint tag, bool require, object value)
         {
-            IMessage t = value as IMessage;
+            IStruct t = value as IStruct;
             reader.Visit(tag, null, require, ref t);
             return t;
         }
@@ -192,7 +192,7 @@ namespace Sdp
         {
             if (value != null)
             {
-                IMessage t = (IMessage)value;
+                IStruct t = (IStruct)value;
                 writer.Visit(tag, null, require, ref t);
             }
         }
