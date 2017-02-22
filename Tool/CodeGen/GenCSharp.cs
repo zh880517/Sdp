@@ -86,7 +86,7 @@ namespace CodeGen
             StringBuilder sb = new StringBuilder();
             sb.NewLine(tableNum).Append("[Serializable]");
             sb.NewLine(tableNum);
-            sb.AppendFormat("public class {0} : IMessage", entity.Name.Value);
+            sb.AppendFormat("public class {0} : IStruct", entity.Name.Value);
             sb.NewLine(tableNum).Append('{');
             if (entity.Fields.Count > 0)
             {
