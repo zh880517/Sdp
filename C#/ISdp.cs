@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -54,6 +55,8 @@ namespace Sdp
         void Visit(uint tag, string name, bool require, ref IStruct val);
         void Visit<T>(uint tag, string name, bool require, ref List<T> val);
         void Visit<TKey, TValue>(uint tag, string name, bool require, ref Dictionary<TKey, TValue> val);
+        void Visit(uint tag, string name, bool require, ref IList val, ISerializer ser, Type typeT);
+        void Visit(uint tag, string name, bool require, ref IDictionary val, ISerializer keySer, Type keyType, ISerializer valSer, Type valType);
     }
 
     public interface IStruct
@@ -126,17 +129,33 @@ namespace Sdp
             {
                 return _SerializerMap[type];
             }
-            foreach(var it in type.GetInterfaces())
+            foreach (var it in type.GetInterfaces())
             {
                 if (it == _MessageType)
                 {
                     return _Message;
                 }
             }
-            throw new Exception("Sdp Wrong type");
+            return null;
         }
 
-        public static T DeepClone<T>( this T obj)
+        public static ISerializer GetSerializer(Type type)
+        {
+            if (_SerializerMap.ContainsKey(type))
+            {
+                return _SerializerMap[type];
+            }
+            foreach (var it in type.GetInterfaces())
+            {
+                if (it == _MessageType)
+                {
+                    return _Message;
+                }
+            }
+            throw new Exception("Sdp Wrong type : " + type.Name);
+        }
+
+        public static T DeepClone<T>(this T obj)
         {
             object retval;
             using (MemoryStream ms = new MemoryStream())
@@ -158,23 +177,69 @@ namespace Sdp
             {
                 ser.Write(val, writer, 0, true);
             }
+            else
+            {
+                Type type = typeof(T);
+                foreach (var it in type.GetInterfaces())
+                {
+                    if (it == typeof(IDictionary))
+                    {
+                        Type[] genericTypes = type.GetGenericArguments();
+                        IDictionary dir = (IDictionary)val;
+                        var keySer = GetSerializer(genericTypes[0]);
+                        var valSer = GetSerializer(genericTypes[1]);
+                        writer.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                        break;
+                    }
+                    else if (it == typeof(IList))
+                    {
+                        Type[] genericTypes = type.GetGenericArguments();
+                        IList list = (IList)val;
+                        var serT = GetSerializer(genericTypes[0]);
+                        writer.Visit(0, null, true, ref list, serT, genericTypes[0]);
+                        break;
+                    }
+                }
+            }
             return writer.ToBytes();
         }
 
-        public static byte[] Serializer<T>(List<T> val)
+        public static bool Serializer<T>(T val, MemoryStream memst)
         {
-            SdpWriter writer = new SdpWriter();
-            writer.Visit(0, null, true, ref val);
-            return writer.ToBytes();
+            SdpWriter writer = new SdpWriter(memst);
+            var ser = GetSerializer<T>();
+            if (ser != null)
+            {
+                ser.Write(val, writer, 0, true);
+                return true;
+            }
+            else
+            {
+                Type type = typeof(T);
+                foreach (var it in type.GetInterfaces())
+                {
+                    if (it == typeof(IDictionary))
+                    {
+                        Type[] genericTypes = type.GetGenericArguments();
+                        IDictionary dir = (IDictionary)val;
+                        var keySer = GetSerializer(genericTypes[0]);
+                        var valSer = GetSerializer(genericTypes[1]);
+                        writer.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                        return true;
+                    }
+                    else if (it == typeof(IList))
+                    {
+                        Type[] genericTypes = type.GetGenericArguments();
+                        IList list = (IList)val;
+                        var serT = GetSerializer(genericTypes[0]);
+                        writer.Visit(0, null, true, ref list, serT, genericTypes[0]);
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
-        public static byte[] Serializer<TKey, TValue>(Dictionary<TKey, TValue> val)
-        {
-            SdpWriter writer = new SdpWriter();
-            writer.Visit(0, null, true, ref val);
-            return writer.ToBytes();
-        }
-        
         public static bool Deserialize<T>(this T val, byte[] data)
         {
             SdpReader reader = new SdpReader(data, 0, 0);
@@ -184,21 +249,73 @@ namespace Sdp
                 val = (T)ser.Read(reader, 0, true, val);
                 return true;
             }
+            else
+            {
+                Type type = typeof(T);
+                if (val == null)
+                    val = Activator.CreateInstance<T>();
+
+                foreach (var it in type.GetInterfaces())
+                {
+                    if (it == typeof(IDictionary))
+                    {
+                        Type[] genericTypes = type.GetGenericArguments();
+                        IDictionary dir = (IDictionary)val;
+                        var keySer = GetSerializer(genericTypes[0]);
+                        var valSer = GetSerializer(genericTypes[1]);
+                        reader.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                        return true;
+                    }
+                    else if (it == typeof(IList))
+                    {
+                        Type[] genericTypes = type.GetGenericArguments();
+                        IList list = (IList)val;
+                        var serT = GetSerializer(genericTypes[0]);
+                        reader.Visit(0, null, true, ref list, serT, genericTypes[0]);
+                        return false;
+                    }
+                }
+            }
             return false;
         }
 
-        public static bool Deserialize<T>(this List<T> val, byte[] data)
+        public static T Deserialize<T>(byte[] data)
         {
+            T val = Activator.CreateInstance<T>();
             SdpReader reader = new SdpReader(data, 0, 0);
-            reader.Visit(0, null, false, ref val);
-            return true;
-        }
+            var ser = GetSerializer<T>();
+            if (ser != null)
+            {
+                val = (T)ser.Read(reader, 0, true, val);
+                return val;
+            }
+            else
+            {
+                Type type = typeof(T);
 
-        public static bool Deserialize<TKey, TValue>(this Dictionary<TKey, TValue> val, byte[] data)
-        {
-            SdpReader reader = new SdpReader(data, 0, 0);
-            reader.Visit(0, null, false, ref val);
-            return true;
+                foreach (var it in type.GetInterfaces())
+                {
+                    if (it == typeof(IDictionary))
+                    {
+                        Type[] genericTypes = type.GetGenericArguments();
+                        IDictionary dir = (IDictionary)val;
+                        var keySer = GetSerializer(genericTypes[0]);
+                        var valSer = GetSerializer(genericTypes[1]);
+                        reader.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                        return val;
+                    }
+                    else if (it == typeof(IList))
+                    {
+                        Type[] genericTypes = type.GetGenericArguments();
+                        IList list = (IList)val;
+                        var serT = GetSerializer(genericTypes[0]);
+                        reader.Visit(0, null, true, ref list, serT, genericTypes[0]);
+                        return val;
+                    }
+                }
+            }
+            return default(T);
         }
+        
     }
 }

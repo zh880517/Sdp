@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -115,6 +116,11 @@ namespace Sdp
             return _Stream.ToArray();
         }
 
+        public MemoryStream Stream()
+        {
+            return _Stream;
+        }
+
         public void Visit(uint tag, string name, bool require, ref bool val)
         {
             if (!val || require)
@@ -222,6 +228,8 @@ namespace Sdp
 
         public void Visit(uint tag, string name, bool require, ref IStruct val)
         {
+            if (val == null)
+                return;
             if (require)
             {
                 PackHead(tag, SdpPackDataType.SdpPackDataType_StructBegin);
@@ -273,5 +281,32 @@ namespace Sdp
             }
         }
 
+        public void Visit(uint tag, string name, bool require, ref IList val, ISerializer ser, Type typeT)
+        {
+            if (require || val.Count > 0)
+            {
+                PackHead(tag, SdpPackDataType.SdpPackDataType_Vector);
+                PackNum32((uint)val.Count);
+                foreach (var t in val)
+                {
+                    ser.Write(t, this, 0, true);
+                }
+            }
+        }
+
+        public void Visit(uint tag, string name, bool require, ref IDictionary val, ISerializer keySer, Type keyType, ISerializer valSer, Type valType)
+        {
+            if (require || val.Count > 0)
+            {
+                PackHead(tag, SdpPackDataType.SdpPackDataType_Map);
+                PackNum32((uint)val.Count);
+                
+                foreach (var pair in val)
+                {
+                    keySer.Write(((IDictionaryEnumerator)pair).Key, this, 0, true);
+                    valSer.Write(((IDictionaryEnumerator)pair).Value, this, 0, true);
+                }
+            }
+        }
     }
 }

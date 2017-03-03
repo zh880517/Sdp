@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -435,6 +436,24 @@ namespace Sdp
             }//if
         }
 
+        public void Visit(uint tag, string name, bool require, ref IList val, ISerializer ser, Type typeT)
+        {
+            if (SkipToTag(tag))
+            {
+                SdpPackDataType type = UnPackHead(ref tag);
+                if (type == SdpPackDataType.SdpPackDataType_Vector)
+                {
+                    uint iSize = Unpack32();
+                    for (uint i = 0; i < iSize; ++i)
+                    {
+                        object t = Activator.CreateInstance(typeT);
+                        t = ser.Read(this, 0, require, t);
+                        val.Add(t);
+                    }//for
+                }//if
+            }//if
+        }
+
         public void Visit<TKey, TValue>(uint tag, string name, bool require, ref Dictionary<TKey, TValue> val)
         {
             if (SkipToTag(tag))
@@ -454,6 +473,28 @@ namespace Sdp
                         key = (TKey)keySer.Read(this, tag, require, key);
                         value = (TValue)valSer.Read(this, tag, require, value);
                         if (val.ContainsKey(key))
+                            val.Remove(key);
+                        val.Add(key, value);
+                    }//for
+                }//if
+            }//if
+        }
+
+        public void Visit(uint tag, string name, bool require, ref IDictionary val, ISerializer keySer, Type keyType, ISerializer valSer, Type valType)
+        {
+            if (SkipToTag(tag))
+            {
+                SdpPackDataType type = UnPackHead(ref tag);
+                if (type == SdpPackDataType.SdpPackDataType_Map)
+                {
+                    uint iSize = Unpack32();
+                    for (var i = 0; i < iSize; ++i)
+                    {
+                        object key = Activator.CreateInstance(keyType);
+                        object value = Activator.CreateInstance(valType);
+                        key = keySer.Read(this, tag, require, key);
+                        value = valSer.Read(this, tag, require, value);
+                        if (val.Contains(key))
                             val.Remove(key);
                         val.Add(key, value);
                     }//for
