@@ -239,11 +239,13 @@ namespace Sdp
             }
             return false;
         }
-
+        
         public static bool Deserialize<T>(this T val, byte[] data)
         {
             SdpReader reader = new SdpReader(data, 0, 0);
             var ser = GetSerializer<T>();
+            if (val == null)
+                val = Activator.CreateInstance<T>();
             if (ser != null)
             {
                 val = (T)ser.Read(reader, 0, true, val);
@@ -252,9 +254,6 @@ namespace Sdp
             else
             {
                 Type type = typeof(T);
-                if (val == null)
-                    val = Activator.CreateInstance<T>();
-
                 foreach (var it in type.GetInterfaces())
                 {
                     if (it == typeof(IDictionary))
@@ -278,7 +277,7 @@ namespace Sdp
             }
             return false;
         }
-
+        
         public static T Deserialize<T>(byte[] data)
         {
             T val = Activator.CreateInstance<T>();
