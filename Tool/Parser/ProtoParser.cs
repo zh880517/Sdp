@@ -27,9 +27,15 @@ namespace Parser
         private static SymbolMatch CloseingbraceMatch = new SymbolMatch('}');
         private static SymbolMatch OpeningAngleMatch = new SymbolMatch('<');
         private static SymbolMatch CloseingAngleMatch = new SymbolMatch('>');
+        private static SymbolMatch OpeningBracketMatch = new SymbolMatch('(');
+        private static SymbolMatch CloseingBracketMatch = new SymbolMatch(')');
         private static KeyWordMatch EnumMatch = new KeyWordMatch("enum");
         private static KeyWordMatch StructMatch = new KeyWordMatch("struct");
+        private static KeyWordMatch MessageMatch = new KeyWordMatch("message");
+        private static KeyWordMatch InterfaceMatch = new KeyWordMatch("interface");
+        private static KeyWordMatch ServiceMatch = new KeyWordMatch("service");
         private static KeyWordMatch ImportMatch = new KeyWordMatch("import");
+        private static KeyWordMatch RpcMatch = new KeyWordMatch("rpc");
         private static KeyWordMatch NamespaceMatch = new KeyWordMatch("namespace");
         private static StringMatch NormalStringMatch = new StringMatch();
         private static KeyWordsMatch BaseTypeMatch = new KeyWordsMatch(BaseType);
@@ -90,6 +96,36 @@ namespace Parser
             return null;
         }
 
+        public static TypeEntity ParseTypeEntity(TokenIterator it)
+        {
+            do
+            {
+                TypeEntity entity = new TypeEntity();
+                if (VectorMatch.Match(it, ref entity.Type))
+                {
+                    Token token = null;
+                    if (!OpeningAngleMatch.Match(it) || !TypeNameMatch.Match(it, ref token) || !CloseingAngleMatch.Match(it))
+                        break;
+                    entity.TypeParam.Add(token);
+                }
+                else if (MapMatch.Match(it, ref entity.Type))
+                {
+                    Token token1 = null;
+                    Token token2 = null;
+                    if (!OpeningAngleMatch.Match(it) || !BaseTypeMatch.Match(it, ref token1) || !CommaMatch.Match(it) || !TypeNameMatch.Match(it, ref token2) || !CloseingAngleMatch.Match(it))
+                        break;
+                    entity.TypeParam.Add(token1);
+                    entity.TypeParam.Add(token2);
+                }
+                else if (!BaseTypeMatch.Match(it, ref entity.Type) && !TypeNameMatch.Match(it, ref entity.Type))
+                {
+                    break;
+                }
+                return entity;
+            } while (false);
+            return null;
+        }
+
         public static StructField ParseStructField(TokenIterator it)
         {
             StructField field = new StructField();
@@ -97,26 +133,10 @@ namespace Parser
             {
                 do
                 {
-                    if (VectorMatch.Match(it, ref field.Type))
-                    {
-                        Token token = null;
-                        if (!OpeningAngleMatch.Match(it) || !TypeNameMatch.Match(it, ref token) || !CloseingAngleMatch.Match(it))
-                            break;
-                        field.TypeParam.Add(token);
-                    }
-                    else if (MapMatch.Match(it, ref field.Type))
-                    {
-                        Token token1 = null;
-                        Token token2 = null;
-                        if (!OpeningAngleMatch.Match(it) || !BaseTypeMatch.Match(it, ref token1) || !CommaMatch.Match(it) || !TypeNameMatch.Match(it, ref token2) || !CloseingAngleMatch.Match(it))
-                            break;
-                        field.TypeParam.Add(token1);
-                        field.TypeParam.Add(token2);
-                    }
-                    else if (!BaseTypeMatch.Match(it, ref field.Type) && !TypeNameMatch.Match(it, ref field.Type))
-                    {
+                    var typeEntity = ParseTypeEntity(it);
+                    if (typeEntity == null)
                         break;
-                    }
+                    field.Type = typeEntity;
                     if (!VarNameMatch.Match(it, ref field.Name))
                         break;
                     if (!SemicolonMatch.Match(it))
@@ -155,6 +175,97 @@ namespace Parser
             return null;
         }
 
+        public static MessageEnity ParseMessageEntity(TokenIterator it)
+        {
+            if (MessageMatch.Match(it))
+            {
+                MessageEnity entity = new MessageEnity();
+                if (VarNameMatch.Match(it, ref entity.Name))
+                {
+                    if (OpeningbraceMatch.Match(it))
+                    {
+                        while (true)
+                        {
+                            if (CloseingbraceMatch.Match(it))
+                                break;
+                            var filed = ParseStructField(it);
+                            if (filed == null)
+                                ThrowError(it);
+                            entity.Fields.Add(filed);
+                        }
+                        return entity;
+                    }
+                    ThrowError(it);
+                }
+            }
+            return null;
+        }
+
+        public static ParamEntity ParseParamEntity(TokenIterator it)
+        {
+            ParamEntity entity = new ParamEntity();
+            var typeEntity = ParseTypeEntity(it);
+            if (typeEntity == null)
+                return null;
+            entity.Type = typeEntity;
+            if (!VarNameMatch.Match(it, ref entity.Name))
+                return null;
+            return entity;
+        }
+
+        public static RpcEntity ParseRpcEntiy(TokenIterator it)
+        {
+            do
+            {
+                if (!RpcMatch.Match(it))
+                    break;
+                RpcEntity entity = new RpcEntity();
+                entity.ReturnType = ParseTypeEntity(it);
+                if (entity.ReturnType == null)
+                    break;
+                if (!VarNameMatch.Match(it, ref entity.Name))
+                    break;;
+                if (!OpeningBracketMatch.Match(it))
+                    break;
+                if (!CloseingBracketMatch.Match(it))
+                {
+                    var paramEntity = ParseParamEntity(it);
+                    if (paramEntity == null)
+                        break;
+                    entity.Param = paramEntity;
+                    if (!CloseingBracketMatch.Match(it))
+                        break;
+                }
+                if (!SemicolonMatch.Match(it))
+                    break;
+                return entity;
+            } while (false);
+            return null;
+        }
+
+        public static ServiceEntity ParseServiceEntity(TokenIterator it)
+        {
+            do 
+            {
+                if (!ServiceMatch.Match(it))
+                    break;
+                ServiceEntity entity = new ServiceEntity();
+                if (!VarNameMatch.Match(it, ref entity.Name) || !OpeningbraceMatch.Match(it))
+                    break;
+                while (true)
+                {
+                    if(CloseingbraceMatch.Match(it))
+                        break;
+                    var rpcEntity = ParseRpcEntiy(it);
+                    if (rpcEntity == null)
+                        return null;
+                    entity.Rpcs.Add(rpcEntity);
+                }
+                return entity;
+            } while (false);
+            return null;
+        }
+
         public static NameSpaceEntity ParseNameSpace(TokenIterator it)
         {
             if (NamespaceMatch.Match(it))
@@ -168,10 +279,33 @@ namespace Parser
                             break;
                         var enumEntity = ParseEnumEntity(it);
                         if (enumEntity != null)
+                        {
                             entity.Enums.Add(enumEntity);
+                            continue;
+                        }
+
                         var structEntity = ParseStructEntity(it);
                         if (structEntity != null)
+                        {
                             entity.Structs.Add(structEntity);
+                            continue;
+                        }
+
+                        var messageEntity = ParseMessageEntity(it);
+                        if (messageEntity != null)
+                        {
+                            entity.Structs.Add(messageEntity);
+                            continue;
+                        }
+
+                        var serviceEntity = ParseServiceEntity(it);
+                        if(serviceEntity != null)
+                        {
+                            entity.Services.Add(serviceEntity);
+                            continue;
+                        }
+
+                        break;
                     }
                     return entity;
                 }
@@ -212,16 +346,41 @@ namespace Parser
                 while(true)
                 {
                     var entity = ParseNameSpace(it);
-                    if (entity == null)
-                        break;
-                    fileEnity.NameSpaces.Add(entity);
+                    if (entity != null)
+                    {
+                        fileEnity.NameSpaces.Add(entity);
+                        continue;
+                    }
+
                     var enumEntity = ParseEnumEntity(it);
                     if (enumEntity != null)
+                    {
                         globalNS.Enums.Add(enumEntity);
+                        continue;
+                    }
+
                     var stEntity = ParseStructEntity(it);
                     if (stEntity != null)
+                    {
                         globalNS.Structs.Add(stEntity);
-                    
+                        continue;
+                    }
+
+                    var messageEntity = ParseMessageEntity(it);
+                    if (messageEntity != null)
+                    {
+                        globalNS.Structs.Add(messageEntity);
+                        continue;
+                    }
+
+                    var serviceEntity = ParseServiceEntity(it);
+                    if (serviceEntity != null)
+                    {
+                        globalNS.Services.Add(serviceEntity);
+                        continue;
+                    }
+
+                    break;
                 }
                 if (globalNS.Enums.Count > 0 || globalNS.Structs.Count > 0)
                     fileEnity.NameSpaces.Add(globalNS);

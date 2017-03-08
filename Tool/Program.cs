@@ -4,15 +4,14 @@ using System.IO;
 
 namespace Parser
 {
-
     class Program
     {
         static void Main(string[] args)
         {
             bool bResult = Builder.DoBuilder(args);
 
-            Console.WriteLine("Please press 'Enter' key to continue ... ");
-            Console.ReadLine();
+            Console.WriteLine("Please press any key to continue ... ");
+            Console.ReadKey();
         }
     }
 }

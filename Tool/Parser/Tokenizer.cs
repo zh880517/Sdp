@@ -11,7 +11,7 @@ namespace Parser
 
         private string m_strFile;
 
-        private char[] m_vSep = {',', '=', ';', '{', '}', '<', '>', '[', ']' };
+        private char[] m_vSep = {',', '=', ';', '{', '}', '<', '>', '[', ']' , '(', ')'};
 
         private List<Token> m_listToken;
 
@@ -90,7 +90,6 @@ namespace Parser
                         if (c == '/')
                         {
                             #region 解析注释
-                            bool flag4 = i < iCount - 1 && m_strBuffer[i + 1] == '/';
                             if (i >= iCount - 1 || m_strBuffer[i + 1] != '/')
                                 return false;
                             

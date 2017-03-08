@@ -37,6 +37,11 @@ namespace CodeGen
             return OutSB.ToString();
         }
 
+        private string MsgIdToString(MsgIDEntity entity)
+        {
+            return string.Format("{0}.{1}", entity.EnumToken.Value, entity.FieldToken.Value);
+        }
+
         private string EnumToString(EnumEntity entity, int tableNum)
         {
             StringBuilder sb = new StringBuilder();
@@ -64,21 +69,21 @@ namespace CodeGen
 
         public string StructFieldToMemberString(StructField field)
         {
-            if (field.TypeType == FieldType.BaseType || field.TypeType == FieldType.Enum)
+            if (field.Type.TypeType == FieldType.BaseType || field.Type.TypeType == FieldType.Enum)
             {
-                return string.Format("public {0} {1};", BaseTypeTran(field.Type.Value), field.Name.Value);
+                return string.Format("public {0} {1};", BaseTypeTran(field.Type.Type.Value), field.Name.Value);
             }
-            else if (field.TypeType == FieldType.Vector)
+            else if (field.Type.TypeType == FieldType.Vector)
             {
                 return string.Format("public List<{0}> {1} = new List<{0}>();"
-                    , BaseTypeTran(field.TypeParam[0].Value), field.Name.Value);
+                    , BaseTypeTran(field.Type.TypeParam[0].Value), field.Name.Value);
             }
-            else if (field.TypeType == FieldType.Map)
+            else if (field.Type.TypeType == FieldType.Map)
             {
                 return string.Format("public Dictionary<{0}, {1}> {2} = new Dictionary<{0}, {1}>();"
-                    , BaseTypeTran(field.TypeParam[0].Value), BaseTypeTran(field.TypeParam[1].Value), field.Name.Value);
+                    , BaseTypeTran(field.Type.TypeParam[0].Value), BaseTypeTran(field.Type.TypeParam[1].Value), field.Name.Value);
             }
-            return string.Format("public {0} {1} = new {0}();", field.Type.Value, field.Name.Value);
+            return string.Format("public {0} {1} = new {0}();", field.Type.Type.Value, field.Name.Value);
         }
 
         public string StructToString(StructEntity entity, int tableNum)
@@ -87,6 +92,10 @@ namespace CodeGen
             sb.NewLine(tableNum).Append("[Serializable]");
             sb.NewLine(tableNum);
             sb.AppendFormat("public class {0} : IStruct", entity.Name.Value);
+            if (entity.IsMessage)
+            {
+                sb.Append(", IMessage");
+            } 
             sb.NewLine(tableNum).Append('{');
             if (entity.Fields.Count > 0)
             {
@@ -94,20 +103,25 @@ namespace CodeGen
                 sb.NewLine(tableNum + 1).Append("private static readonly string[] _member_name_ = new string[] { ");
                 for (int i = 0; i < entity.Fields.Count; ++i)
                 {
-                    sb.Append(entity.Fields[i].Name.Value);
+                    sb.AppendFormat("\"{0}\"", entity.Fields[i].Name.Value);
                     if (i < entity.Fields.Count - 1)
                         sb.Append(", ");
                 }
                 sb.Append(" }");
                 sb.NewLine();
             }
-
             foreach (var field in entity.Fields)
             {
                 sb.NewLine(tableNum + 1).Append(StructFieldToMemberString(field)).NewLine();
             }
             sb.NewLine();
-
+            
+            if (entity.IsMessage)
+            {
+                var msgEntity = (MessageEnity)entity;
+                sb.NewLine(tableNum + 1).Append("public int ID(){ return (int)").Append(MsgIdToString(msgEntity.ID)).Append("; }");
+                sb.NewLine();
+            }
             sb.NewLine(tableNum + 1).Append("public void Visit(ISdp sdp)");
             sb.NewLine(tableNum + 1).Append('{');
             for (int i=0; i<entity.Fields.Count; ++i)
