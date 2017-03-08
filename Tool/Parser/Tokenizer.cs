@@ -42,7 +42,7 @@ namespace Parser
             {
                 Token stToken = new Token();
                 stToken.FileName = m_strFile;
-                if (!Peak(stToken))
+                if (!Peek(stToken))
                     break;
                 if (stToken.Type != ETokenType.eComments || !SkipComments)
                     m_listToken.Add(stToken);
@@ -71,7 +71,7 @@ namespace Parser
             return new TokenIterator(m_listToken);
         }
 
-        private bool Peak(Token stToken)
+        private bool Peek(Token stToken)
         {
             int iStarFlag = m_iBegin;
             int iCount = m_strBuffer.Count();
