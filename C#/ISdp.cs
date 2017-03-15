@@ -49,6 +49,7 @@ namespace Sdp
         void Visit(uint tag, string name, bool require, ref float val);
         void Visit(uint tag, string name, bool require, ref double val);
         void Visit(uint tag, string name, bool require, ref string val);
+        void VisitEunm<T>(uint tag, string name, bool require, ref T val);
         void Visit(uint tag, string name, bool require, ref DateTime val);
         void Visit(uint tag, string name, bool require, ref Guid val);
         void Visit(uint tag, string name, bool require, ref byte[] val);
@@ -180,24 +181,31 @@ namespace Sdp
             else
             {
                 Type type = typeof(T);
-                foreach (var it in type.GetInterfaces())
+                if (type.IsEnum)
                 {
-                    if (it == typeof(IDictionary))
+                    writer.VisitEunm(0, null, true, ref val);
+                } 
+                else
+                {
+                    foreach (var it in type.GetInterfaces())
                     {
-                        Type[] genericTypes = type.GetGenericArguments();
-                        IDictionary dir = (IDictionary)val;
-                        var keySer = GetSerializer(genericTypes[0]);
-                        var valSer = GetSerializer(genericTypes[1]);
-                        writer.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
-                        break;
-                    }
-                    else if (it == typeof(IList))
-                    {
-                        Type[] genericTypes = type.GetGenericArguments();
-                        IList list = (IList)val;
-                        var serT = GetSerializer(genericTypes[0]);
-                        writer.Visit(0, null, true, ref list, serT, genericTypes[0]);
-                        break;
+                        if (it == typeof(IDictionary))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IDictionary dir = (IDictionary)val;
+                            var keySer = GetSerializer(genericTypes[0]);
+                            var valSer = GetSerializer(genericTypes[1]);
+                            writer.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                            break;
+                        }
+                        else if (it == typeof(IList))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IList list = (IList)val;
+                            var serT = GetSerializer(genericTypes[0]);
+                            writer.Visit(0, null, true, ref list, serT, genericTypes[0]);
+                            break;
+                        }
                     }
                 }
             }
@@ -216,24 +224,31 @@ namespace Sdp
             else
             {
                 Type type = typeof(T);
-                foreach (var it in type.GetInterfaces())
+                if (type.IsEnum)
                 {
-                    if (it == typeof(IDictionary))
+                    writer.VisitEunm(0, null, true, ref val);
+                } 
+                else
+                {
+                    foreach (var it in type.GetInterfaces())
                     {
-                        Type[] genericTypes = type.GetGenericArguments();
-                        IDictionary dir = (IDictionary)val;
-                        var keySer = GetSerializer(genericTypes[0]);
-                        var valSer = GetSerializer(genericTypes[1]);
-                        writer.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
-                        return true;
-                    }
-                    else if (it == typeof(IList))
-                    {
-                        Type[] genericTypes = type.GetGenericArguments();
-                        IList list = (IList)val;
-                        var serT = GetSerializer(genericTypes[0]);
-                        writer.Visit(0, null, true, ref list, serT, genericTypes[0]);
-                        return true;
+                        if (it == typeof(IDictionary))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IDictionary dir = (IDictionary)val;
+                            var keySer = GetSerializer(genericTypes[0]);
+                            var valSer = GetSerializer(genericTypes[1]);
+                            writer.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                            return true;
+                        }
+                        else if (it == typeof(IList))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IList list = (IList)val;
+                            var serT = GetSerializer(genericTypes[0]);
+                            writer.Visit(0, null, true, ref list, serT, genericTypes[0]);
+                            return true;
+                        }
                     }
                 }
             }
@@ -254,24 +269,32 @@ namespace Sdp
             else
             {
                 Type type = typeof(T);
-                foreach (var it in type.GetInterfaces())
+                if (type.IsEnum)
                 {
-                    if (it == typeof(IDictionary))
+                    reader.VisitEunm(0, null, true, ref val);
+                    return true;
+                } 
+                else
+                {
+                    foreach (var it in type.GetInterfaces())
                     {
-                        Type[] genericTypes = type.GetGenericArguments();
-                        IDictionary dir = (IDictionary)val;
-                        var keySer = GetSerializer(genericTypes[0]);
-                        var valSer = GetSerializer(genericTypes[1]);
-                        reader.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
-                        return true;
-                    }
-                    else if (it == typeof(IList))
-                    {
-                        Type[] genericTypes = type.GetGenericArguments();
-                        IList list = (IList)val;
-                        var serT = GetSerializer(genericTypes[0]);
-                        reader.Visit(0, null, true, ref list, serT, genericTypes[0]);
-                        return false;
+                        if (it == typeof(IDictionary))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IDictionary dir = (IDictionary)val;
+                            var keySer = GetSerializer(genericTypes[0]);
+                            var valSer = GetSerializer(genericTypes[1]);
+                            reader.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                            return true;
+                        }
+                        else if (it == typeof(IList))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IList list = (IList)val;
+                            var serT = GetSerializer(genericTypes[0]);
+                            reader.Visit(0, null, true, ref list, serT, genericTypes[0]);
+                            return false;
+                        }
                     }
                 }
             }
@@ -291,25 +314,32 @@ namespace Sdp
             else
             {
                 Type type = typeof(T);
-
-                foreach (var it in type.GetInterfaces())
+                if (type.IsEnum)
                 {
-                    if (it == typeof(IDictionary))
+                    reader.VisitEunm(0, null, true, ref val);
+                    return val;
+                } 
+                else
+                {
+                    foreach (var it in type.GetInterfaces())
                     {
-                        Type[] genericTypes = type.GetGenericArguments();
-                        IDictionary dir = (IDictionary)val;
-                        var keySer = GetSerializer(genericTypes[0]);
-                        var valSer = GetSerializer(genericTypes[1]);
-                        reader.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
-                        return val;
-                    }
-                    else if (it == typeof(IList))
-                    {
-                        Type[] genericTypes = type.GetGenericArguments();
-                        IList list = (IList)val;
-                        var serT = GetSerializer(genericTypes[0]);
-                        reader.Visit(0, null, true, ref list, serT, genericTypes[0]);
-                        return val;
+                        if (it == typeof(IDictionary))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IDictionary dir = (IDictionary)val;
+                            var keySer = GetSerializer(genericTypes[0]);
+                            var valSer = GetSerializer(genericTypes[1]);
+                            reader.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                            return val;
+                        }
+                        else if (it == typeof(IList))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IList list = (IList)val;
+                            var serT = GetSerializer(genericTypes[0]);
+                            reader.Visit(0, null, true, ref list, serT, genericTypes[0]);
+                            return val;
+                        }
                     }
                 }
             }

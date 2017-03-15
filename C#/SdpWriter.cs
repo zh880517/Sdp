@@ -197,6 +197,14 @@ namespace Sdp
             }
         }
 
+        public void VisitEunm<T>(uint tag, string name, bool require, ref T val)
+        {
+            if ((int)(object)val != 0 || require)
+            {
+                PackInt32(tag, (int)(object)val);
+            }
+        }
+
         public void Visit(uint tag, string name, bool require, ref DateTime val)
         {
             if (require || val > Sdp.EpochOrigin)
@@ -308,5 +316,6 @@ namespace Sdp
                 }
             }
         }
+
     }
 }

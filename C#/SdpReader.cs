@@ -365,6 +365,27 @@ namespace Sdp
             }
         }
 
+        public void VisitEunm<T>(uint tag, string name, bool require, ref T val)
+        {
+            if (SkipToTag(tag))
+            {
+                SdpPackDataType type = UnPackHead(ref tag);
+                if (type == SdpPackDataType.SdpPackDataType_Integer_Negative)
+                {
+                    uint iValue = Unpack32();
+                    val = (T)(object) - (int)iValue;
+                }
+                else
+                {
+                    if (type == SdpPackDataType.SdpPackDataType_Integer_Positive)
+                    {
+                        uint iValue2 = Unpack32();
+                        val = (T)(object)(int)iValue2;
+                    }
+                }
+            }
+        }
+
         public void Visit(uint tag, string name, bool require, ref Guid val)
         {
             string str = GuidSerializer.Empty;
@@ -501,5 +522,6 @@ namespace Sdp
                 }//if
             }//if
         }
+
     }
 }
