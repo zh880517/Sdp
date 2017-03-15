@@ -123,7 +123,7 @@ namespace Parser
                 }
                 return entity;
             } while (false);
-            return null;
+            throw new Exception(ItToError(it));
         }
 
         public static StructField ParseStructField(TokenIterator it)
@@ -209,16 +209,16 @@ namespace Parser
                 return null;
             entity.Type = typeEntity;
             if (!VarNameMatch.Match(it, ref entity.Name))
-                return null;
+                throw new Exception(ItToError(it));
             return entity;
         }
 
         public static RpcEntity ParseRpcEntiy(TokenIterator it)
         {
+            if (!RpcMatch.Match(it))
+                return null;
             do
             {
-                if (!RpcMatch.Match(it))
-                    break;
                 RpcEntity entity = new RpcEntity();
                 entity.ReturnType = ParseTypeEntity(it);
                 if (entity.ReturnType == null)
@@ -240,15 +240,15 @@ namespace Parser
                     break;
                 return entity;
             } while (false);
-            return null;
+            throw new Exception(ItToError(it));
         }
 
         public static ServiceEntity ParseServiceEntity(TokenIterator it)
         {
+            if (!ServiceMatch.Match(it))
+                return null;
             do 
             {
-                if (!ServiceMatch.Match(it))
-                    break;
                 ServiceEntity entity = new ServiceEntity();
                 if (!VarNameMatch.Match(it, ref entity.Name) || !OpeningbraceMatch.Match(it))
                     break;
@@ -263,7 +263,7 @@ namespace Parser
                 }
                 return entity;
             } while (false);
-            return null;
+            throw new Exception(ItToError(it));
         }
 
         public static NameSpaceEntity ParseNameSpace(TokenIterator it)
