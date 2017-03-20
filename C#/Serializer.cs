@@ -146,6 +146,22 @@ namespace Sdp
         }
     }
 
+    public class EnumSerializer : ISerializer
+    {
+        public object Read(SdpReader reader, uint tag, bool require, object value = null)
+        {
+            int val = (int)value;
+            reader.Visit(tag, null, require, ref val);
+            return val;
+        }
+
+        public void Write(object value, SdpWriter writer, uint tag, bool require)
+        {
+            int val = (int)value;
+            writer.Visit(tag, null, require, ref val);
+        }
+    }
+
     public class BytesSerializer : ISerializer
     {
         public object Read(SdpReader reader, uint tag, bool require, object value)

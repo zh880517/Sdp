@@ -98,6 +98,8 @@ namespace Sdp
 
         private static StringSerializer _String = new StringSerializer();
 
+        private static EnumSerializer _Enum = new EnumSerializer();
+
         private static DateTimeSerializer _DateTime = new DateTimeSerializer();
 
         private static BytesSerializer _Bytes = new BytesSerializer();
@@ -126,6 +128,10 @@ namespace Sdp
         public static ISerializer GetSerializer<T>()
         {
             Type type = typeof(T);
+            if (type.IsEnum)
+            {
+                return _Enum;
+            }
             if (_SerializerMap.ContainsKey(type))
             {
                 return _SerializerMap[type];
@@ -142,6 +148,10 @@ namespace Sdp
 
         public static ISerializer GetSerializer(Type type)
         {
+            if (type.IsEnum)
+            {
+                return _Enum;
+            }
             if (_SerializerMap.ContainsKey(type))
             {
                 return _SerializerMap[type];
@@ -227,6 +237,7 @@ namespace Sdp
                 if (type.IsEnum)
                 {
                     writer.VisitEunm(0, null, true, ref val);
+                    return true;
                 } 
                 else
                 {
