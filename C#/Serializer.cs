@@ -185,7 +185,7 @@ namespace Sdp
         {
             string val = Empty;
             reader.Visit(tag, null, require, ref val);
-            return Guid.Parse(val);
+            return new Guid(val);
         }
 
         public void Write(object value, SdpWriter writer, uint tag, bool require)

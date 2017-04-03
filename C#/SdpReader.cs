@@ -120,7 +120,7 @@ namespace Sdp
                 case SdpPackDataType.SdpPackDataType_Float:
                 case SdpPackDataType.SdpPackDataType_Double:
                     {
-                        ulong val = Unpack64();
+                        Unpack64();
                         break;
                     }
                 case SdpPackDataType.SdpPackDataType_String:
@@ -390,7 +390,7 @@ namespace Sdp
         {
             string str = GuidSerializer.Empty;
             Visit(tag, name, require, ref val);
-            val = Guid.Parse(str);
+            val = new Guid(str);
         }
 
         public void Visit(uint tag, string name, bool require, ref DateTime val)

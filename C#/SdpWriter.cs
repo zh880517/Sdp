@@ -250,7 +250,6 @@ namespace Sdp
                 sdp.PackHead(tag, SdpPackDataType.SdpPackDataType_StructBegin);
                 uint iStartPos = sdp.CurrPos();
                 val.Visit(sdp);
-                bool flag = iStartPos == sdp.CurrPos();
                 if (iStartPos < sdp.CurrPos())
                 {
                     sdp.PackHead(0u, SdpPackDataType.SdpPackDataType_StructEnd);
