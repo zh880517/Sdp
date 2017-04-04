@@ -123,7 +123,7 @@ namespace Sdp
 
         public void Visit(uint tag, string name, bool require, ref bool val)
         {
-            if (!val || require)
+            if (val || require)
             {
                 PackInt32(tag, val ? 1 : 0);
             }
