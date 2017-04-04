@@ -180,7 +180,7 @@ namespace Sdp
             return (T)retval;
         }
 
-        public static byte[] Serializer<T>(T val)
+        public static byte[] Serializer<T>(this T val)
         {
             SdpWriter writer = new SdpWriter();
             var ser = GetSerializer<T>();
@@ -222,7 +222,7 @@ namespace Sdp
             return writer.ToBytes();
         }
 
-        public static bool Serializer<T>(T val, MemoryStream memst)
+        public static bool Serializer<T>(this T val, MemoryStream memst)
         {
             SdpWriter writer = new SdpWriter(memst);
             var ser = GetSerializer<T>();

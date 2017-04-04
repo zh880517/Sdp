@@ -491,8 +491,8 @@ namespace Sdp
                     {
                         TKey key = Activator.CreateInstance<TKey>();
                         TValue value = Activator.CreateInstance<TValue>();
-                        key = (TKey)keySer.Read(this, tag, require, key);
-                        value = (TValue)valSer.Read(this, tag, require, value);
+                        key = (TKey)keySer.Read(this, 0, require, key);
+                        value = (TValue)valSer.Read(this, 0, require, value);
                         if (val.ContainsKey(key))
                             val.Remove(key);
                         val.Add(key, value);
@@ -513,8 +513,8 @@ namespace Sdp
                     {
                         object key = Activator.CreateInstance(keyType);
                         object value = Activator.CreateInstance(valType);
-                        key = keySer.Read(this, tag, require, key);
-                        value = valSer.Read(this, tag, require, value);
+                        key = keySer.Read(this, 0, require, key);
+                        value = valSer.Read(this, 0, require, value);
                         if (val.Contains(key))
                             val.Remove(key);
                         val.Add(key, value);

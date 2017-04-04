@@ -310,8 +310,8 @@ namespace Sdp
                 
                 foreach (var pair in val)
                 {
-                    keySer.Write(((IDictionaryEnumerator)pair).Key, this, 0, true);
-                    valSer.Write(((IDictionaryEnumerator)pair).Value, this, 0, true);
+                    keySer.Write(((DictionaryEntry)pair).Key, this, 0, true);
+                    valSer.Write(((DictionaryEntry)pair).Value, this, 0, true);
                 }
             }
         }
