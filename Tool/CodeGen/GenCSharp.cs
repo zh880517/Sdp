@@ -114,7 +114,7 @@ namespace CodeGen
                     if (i < entity.Fields.Count - 1)
                         sb.Append(", ");
                 }
-                sb.Append(" }");
+                sb.Append(" };");
                 sb.NewLine();
             }
             foreach (var field in entity.Fields)
