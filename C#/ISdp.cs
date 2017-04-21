@@ -183,177 +183,34 @@ namespace Sdp
         public static byte[] Serializer<T>(this T val)
         {
             SdpWriter writer = new SdpWriter();
-            var ser = GetSerializer<T>();
-            if (ser != null)
-            {
-                ser.Write(val, writer, 0, true);
-            }
-            else
-            {
-                Type type = typeof(T);
-                if (type.IsEnum)
-                {
-                    writer.VisitEunm(0, null, true, ref val);
-                } 
-                else
-                {
-                    foreach (var it in type.GetInterfaces())
-                    {
-                        if (it == typeof(IDictionary))
-                        {
-                            Type[] genericTypes = type.GetGenericArguments();
-                            IDictionary dir = (IDictionary)val;
-                            var keySer = GetSerializer(genericTypes[0]);
-                            var valSer = GetSerializer(genericTypes[1]);
-                            writer.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
-                            break;
-                        }
-                        else if (it == typeof(IList))
-                        {
-                            Type[] genericTypes = type.GetGenericArguments();
-                            IList list = (IList)val;
-                            var serT = GetSerializer(genericTypes[0]);
-                            writer.Visit(0, null, true, ref list, serT, genericTypes[0]);
-                            break;
-                        }
-                    }
-                }
-            }
+            writer.Pack(val);
             return writer.ToBytes();
         }
 
         public static bool Serializer<T>(this T val, MemoryStream memst)
         {
             SdpWriter writer = new SdpWriter(memst);
-            var ser = GetSerializer<T>();
-            if (ser != null)
-            {
-                ser.Write(val, writer, 0, true);
-                return true;
-            }
-            else
-            {
-                Type type = typeof(T);
-                if (type.IsEnum)
-                {
-                    writer.VisitEunm(0, null, true, ref val);
-                    return true;
-                } 
-                else
-                {
-                    foreach (var it in type.GetInterfaces())
-                    {
-                        if (it == typeof(IDictionary))
-                        {
-                            Type[] genericTypes = type.GetGenericArguments();
-                            IDictionary dir = (IDictionary)val;
-                            var keySer = GetSerializer(genericTypes[0]);
-                            var valSer = GetSerializer(genericTypes[1]);
-                            writer.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
-                            return true;
-                        }
-                        else if (it == typeof(IList))
-                        {
-                            Type[] genericTypes = type.GetGenericArguments();
-                            IList list = (IList)val;
-                            var serT = GetSerializer(genericTypes[0]);
-                            writer.Visit(0, null, true, ref list, serT, genericTypes[0]);
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
+            return writer.Pack(val, 0);
         }
         
-        public static bool Deserialize<T>(this T val, byte[] data)
+        public static bool Deserialize<T>(this T val, byte[] data, int index = 0, int len = -1)
         {
-            SdpReader reader = new SdpReader(data, 0, 0);
-            var ser = GetSerializer<T>();
-            if (val == null)
-                val = Activator.CreateInstance<T>();
-            if (ser != null)
-            {
-                val = (T)ser.Read(reader, 0, true, val);
-                return true;
-            }
-            else
-            {
-                Type type = typeof(T);
-                if (type.IsEnum)
-                {
-                    reader.VisitEunm(0, null, true, ref val);
-                    return true;
-                } 
-                else
-                {
-                    foreach (var it in type.GetInterfaces())
-                    {
-                        if (it == typeof(IDictionary))
-                        {
-                            Type[] genericTypes = type.GetGenericArguments();
-                            IDictionary dir = (IDictionary)val;
-                            var keySer = GetSerializer(genericTypes[0]);
-                            var valSer = GetSerializer(genericTypes[1]);
-                            reader.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
-                            return true;
-                        }
-                        else if (it == typeof(IList))
-                        {
-                            Type[] genericTypes = type.GetGenericArguments();
-                            IList list = (IList)val;
-                            var serT = GetSerializer(genericTypes[0]);
-                            reader.Visit(0, null, true, ref list, serT, genericTypes[0]);
-                            return false;
-                        }
-                    }
-                }
-            }
-            return false;
+            if (len == -1)
+                len = data.Length;
+
+            SdpReader reader = new SdpReader(data, (uint)index, (uint)len);
+            return reader.UnPack(ref val, 0);
         }
         
-        public static T Deserialize<T>(byte[] data)
+        public static T Deserialize<T>(byte[] data, int index = 0, int len = -1)
         {
+            if (len == -1)
+                len = data.Length;
             T val = Activator.CreateInstance<T>();
-            SdpReader reader = new SdpReader(data, 0, 0);
-            var ser = GetSerializer<T>();
-            if (ser != null)
-            {
-                val = (T)ser.Read(reader, 0, true, val);
+            SdpReader reader = new SdpReader(data, (uint)index, (uint)len);
+            if (reader.UnPack(ref val, 0))
                 return val;
-            }
-            else
-            {
-                Type type = typeof(T);
-                if (type.IsEnum)
-                {
-                    reader.VisitEunm(0, null, true, ref val);
-                    return val;
-                } 
-                else
-                {
-                    foreach (var it in type.GetInterfaces())
-                    {
-                        if (it == typeof(IDictionary))
-                        {
-                            Type[] genericTypes = type.GetGenericArguments();
-                            IDictionary dir = (IDictionary)val;
-                            var keySer = GetSerializer(genericTypes[0]);
-                            var valSer = GetSerializer(genericTypes[1]);
-                            reader.Visit(0, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
-                            return val;
-                        }
-                        else if (it == typeof(IList))
-                        {
-                            Type[] genericTypes = type.GetGenericArguments();
-                            IList list = (IList)val;
-                            var serT = GetSerializer(genericTypes[0]);
-                            reader.Visit(0, null, true, ref list, serT, genericTypes[0]);
-                            return val;
-                        }
-                    }
-                }
-            }
+
             return default(T);
         }
         

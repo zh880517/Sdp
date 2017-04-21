@@ -27,30 +27,76 @@ namespace Sdp
             }
         }
 
+        public bool UnPack<T>(ref T val, uint tag)
+        {
+            var ser = Sdp.GetSerializer<T>();
+            if (val == null)
+                val = Activator.CreateInstance<T>();
+            if (ser != null)
+            {
+                val = (T)ser.Read(this, tag, true, val);
+                return true;
+            }
+            else
+            {
+                Type type = typeof(T);
+                if (type.IsEnum)
+                {
+                    VisitEunm(tag, null, true, ref val);
+                    return true;
+                }
+                else
+                {
+                    foreach (var it in type.GetInterfaces())
+                    {
+                        if (it == typeof(IDictionary))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IDictionary dir = (IDictionary)val;
+                            var keySer = Sdp.GetSerializer(genericTypes[0]);
+                            var valSer = Sdp.GetSerializer(genericTypes[1]);
+                            Visit(tag, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                            return true;
+                        }
+                        else if (it == typeof(IList))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IList list = (IList)val;
+                            var serT = Sdp.GetSerializer(genericTypes[0]);
+                            Visit(tag, null, true, ref list, serT, genericTypes[0]);
+                            return false;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        public T UnPack<T>(uint tag)
+        {
+            T val = Activator.CreateInstance<T>();
+            if (UnPack(ref val, tag))
+                return val;
+            return default(T);
+        }
+
         public bool SkipToTag(uint iTag)
         {
             uint iCurTag = 0u;
             SdpPackDataType eType = SdpPackDataType.SdpPackDataType_Integer_Positive;
-            bool result;
             while (_CurPos < _Size)
             {
                 uint i = PeekHead(ref iCurTag, ref eType);
-                bool flag = eType == SdpPackDataType.SdpPackDataType_StructEnd || iCurTag > iTag;
-                if (flag)
-                {
+
+                if (eType == SdpPackDataType.SdpPackDataType_StructEnd || iCurTag > iTag)
                     break;
-                }
-                bool flag2 = iCurTag == iTag;
-                if (flag2)
-                {
-                    result = true;
-                    return result;
-                }
+
+                if (iCurTag == iTag)
+                    return true;
                 Skip(i);
                 SkipField(eType);
             }
-            result = false;
-            return result;
+            return false;
         }
 
         public SdpPackDataType UnPackHead(ref uint iTag)
@@ -59,11 +105,9 @@ namespace Sdp
             uint iType = _Stream[(int)_CurPos];
             iTag = (iType & 15u);
             _CurPos += 1u;
-            bool flag = iTag == 15u;
-            if (flag)
-            {
+            if (iTag == 15u)
                 iTag = Unpack32();
-            }
+
             return (SdpPackDataType)(iType >> 4);
         }
 
@@ -99,9 +143,9 @@ namespace Sdp
 
         private void Checksize(uint size)
         {
-            bool flag = _Size - _CurPos < size;
-            if (flag)
+            if (_Size - _CurPos < size)
             {
+                throw new Exception("SdpReader.Checksize() faile!!!");
             }
         }
 
@@ -167,11 +211,9 @@ namespace Sdp
             while (true)
             {
                 SdpPackDataType curtype = UnPackHead(ref curtag);
-                bool flag = curtype == SdpPackDataType.SdpPackDataType_StructEnd;
-                if (flag)
-                {
+                if (curtype == SdpPackDataType.SdpPackDataType_StructEnd)
                     break;
-                }
+
                 SkipField(curtype);
             }
         }
@@ -212,8 +254,7 @@ namespace Sdp
             Checksize(1u);
             eType = (SdpPackDataType)(_Stream[(int)_CurPos] >> 4);
             iTag = (uint)(_Stream[(int)_CurPos] & 15);
-            bool flag = iTag == 15u;
-            if (flag)
+            if (iTag == 15u)
             {
                 _CurPos += 1u;
                 i += PeekNumber32(ref iTag);
@@ -356,8 +397,7 @@ namespace Sdp
                 if (type == SdpPackDataType.SdpPackDataType_String)
                 {
                     uint iLen = Unpack32();
-                    bool flag3 = iLen > 0u;
-                    if (flag3)
+                    if (iLen > 0u)
                     {
                         val = UnPackString(iLen);
                     }

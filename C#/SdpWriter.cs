@@ -25,10 +25,52 @@ namespace Sdp
             _CurPos = (uint)stream.Position;
         }
 
+        public bool Pack<T>(T val, uint tag = 0)
+        {
+            var ser = Sdp.GetSerializer<T>();
+            if (ser != null)
+            {
+                ser.Write(val, this, tag, true);
+                return true;
+            }
+            else
+            {
+                Type type = typeof(T);
+                if (type.IsEnum)
+                {
+                    VisitEunm(tag, null, true, ref val);
+                    return true;
+                }
+                else
+                {
+                    foreach (var it in type.GetInterfaces())
+                    {
+                        if (it == typeof(IDictionary))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IDictionary dir = (IDictionary)val;
+                            var keySer = Sdp.GetSerializer(genericTypes[0]);
+                            var valSer = Sdp.GetSerializer(genericTypes[1]);
+                            Visit(tag, null, true, ref dir, keySer, genericTypes[0], valSer, genericTypes[1]);
+                            return true;
+                        }
+                        else if (it == typeof(IList))
+                        {
+                            Type[] genericTypes = type.GetGenericArguments();
+                            IList list = (IList)val;
+                            var serT = Sdp.GetSerializer(genericTypes[0]);
+                            Visit(tag, null, true, ref list, serT, genericTypes[0]);
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
         public void PackInt32(uint iTag, int iValue)
         {
-            bool flag = iValue < 0;
-            if (flag)
+            if (iValue < 0)
             {
                 PackHead(iTag, SdpPackDataType.SdpPackDataType_Integer_Negative);
                 PackNum32((uint)(-(uint)iValue));
@@ -42,8 +84,7 @@ namespace Sdp
 
         public void PackInt64(uint iTag, long iValue)
         {
-            bool flag = iValue < 0L;
-            if (flag)
+            if (iValue < 0L)
             {
                 PackHead(iTag, SdpPackDataType.SdpPackDataType_Integer_Negative);
                 PackNum64((ulong)(-iValue));
@@ -58,8 +99,7 @@ namespace Sdp
         public void PackHead(uint iTag, SdpPackDataType eType)
         {
             byte head = (byte)((int)eType << 4);
-            bool flag = iTag < 15u;
-            if (flag)
+            if (iTag < 15u)
             {
                 head |= (byte)iTag;
                 WriteRawByte(head);
