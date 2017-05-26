@@ -98,7 +98,7 @@ namespace CodeGen
             StringBuilder sb = new StringBuilder();
             sb.NewLine(tableNum).Append("[Serializable]");
             sb.NewLine(tableNum);
-            sb.AppendFormat("public class {0} : Sdp.IStruct", entity.Name.Value);
+            sb.AppendFormat("public partial class {0} : Sdp.IStruct", entity.Name.Value);
             if (entity.IsMessage)
             {
                 sb.Append(", Sdp.IMessage");
