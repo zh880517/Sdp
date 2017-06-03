@@ -200,7 +200,8 @@ namespace Sdp
         public object Read(SdpReader reader, uint tag, bool require, object value)
         {
             IStruct t = value as IStruct;
-            reader.Visit(tag, null, require, ref t);
+            if(t != null)
+                reader.Visit(tag, null, require, ref t);
             return t;
         }
 
