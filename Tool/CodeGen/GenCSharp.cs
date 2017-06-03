@@ -139,6 +139,11 @@ namespace CodeGen
                     sb.NewLine(tableNum + 2).AppendFormat("sdp.VisitEunm({0}, _member_name_[{1}], false, ref {2});",
                         fd.Index.Value, i, fd.Name.Value);
                 } 
+                else if (fd.Type.TypeType == FieldType.Map || fd.Type.TypeType == FieldType.Vector)
+                {
+                    sb.NewLine(tableNum + 2).AppendFormat("sdp.Visit({0}, _member_name_[{1}], false, {2});",
+                        fd.Index.Value, i, fd.Name.Value);
+                }
                 else
                 {
                     sb.NewLine(tableNum + 2).AppendFormat("sdp.Visit({0}, _member_name_[{1}], false, ref {2});",
