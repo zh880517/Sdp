@@ -534,6 +534,10 @@ namespace Sdp
         {
             UnPackMap(tag, name, require, val);
         }
-        
+
+        public void Visit<T>(ref T val, uint tag)
+        {
+            UnPack(ref val, tag);
+        }
     }
 }

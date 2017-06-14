@@ -338,6 +338,10 @@ namespace Sdp
         {
             PackMap(tag, name, require,  val);
         }
-        
+
+        public void Visit<T>(ref T val, uint tag)
+        {
+            Pack(val, tag);
+        }
     }
 }

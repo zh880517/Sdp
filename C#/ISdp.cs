@@ -41,6 +41,7 @@ namespace Sdp
 
     public interface ISdp
     {
+        void Visit<T>(ref T val, uint tag);
         void Visit(uint tag, string name, bool require, ref bool val);
         void Visit(uint tag, string name, bool require, ref int val);
         void Visit(uint tag, string name, bool require, ref uint val);
